@@ -42,7 +42,7 @@ jobs:
 
   Code-quality-check:
     runs-on: ubuntu-latest
-    name: Run unit tests and SAST scan on the source code 
+    name: Code Quality Check
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 11
@@ -64,7 +64,7 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
       actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
-    name: Build
+    name: Container Scanning
     runs-on: "ubuntu-20.04"
     steps:
       - name: Checkout code
@@ -87,3 +87,10 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
+
+  Secret-Scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: max/secret-scan@master
