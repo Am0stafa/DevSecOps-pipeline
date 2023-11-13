@@ -1,12 +1,10 @@
 name: Security testing
 
 on:
-  pull_request:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 jobs:
   SAST:
     runs-on: ubuntu-20.04
