@@ -1,8 +1,8 @@
-name: "SOOS DAST Scan"
+name: "DAST and IAST Scan"
 
 on:
   workflow_run:
-    workflows: ["Deply"]
+    workflows: ["Deploy"]
     types:
       - completed
     branches: [ "main" ]
