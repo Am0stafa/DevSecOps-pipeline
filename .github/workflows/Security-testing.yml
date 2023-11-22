@@ -94,35 +94,42 @@ jobs:
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: max/secret-scan@master
-    continue-on-error: true
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-
   iac-scan:
     permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      contents: read
+      security-events: write
+      actions: read 
+
     runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name : Code Checkout
-        uses: actions/checkout@v3
-      - name : Zscaler IAC Scan
-        uses : ZscalerCWP/Zscaler-IaC-Action@8d2afb33b10b4bd50e2dc2c932b37c6e70ac1087
-        id : zscaler-iac-scan
+      # Checks-out your repository under $GITHUB_WORKSPACE, so follow-up steps can access it
+      - uses: actions/checkout@v3
+
+      - name: Checkov GitHub Action
+        uses: bridgecrewio/checkov-action@v12
         with:
-          client_id : ${{ secrets.ZSCANNER_CLIENT_ID }}
-          client_secret : ${{ secrets.ZSCANNER_CLIENT_SECRET }}
-          #This is the user region specified during the onboarding process within the ZPC Admin Portal.
-          region : 'US'
-          iac_dir : #Enter the IaC directory path from root.
-          iac_file : #Enter the IaC file path from root.
-          output_format : #(Optional) By default, the output is provided in a human readable format. However, if you require a different format, you can specify it here.
-          #To fail the build based on policy violations identified in the IaC templates, set the input value (fail_build) to true.
-          fail_build : #Enter true/false
-      #Ensure that the following step is included in order to post the scan results under the code scanning alerts section within the repository.
+          # This will add both a CLI output to the console and create a results.sarif file
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+        
       - name: Upload SARIF file
-        if: ${{ success() || failure() && (steps.zscaler-iac-scan.outputs.sarif_file_path != '') }}
         uses: github/codeql-action/upload-sarif@v2
+        
+        # Results are generated only on a success or failure
+        # this is required since GitHub by default won't run the next step
+        # when the previous one has failed. Security checks that do not pass will 'fail'.
+        # An alternative is to add `continue-on-error: true` to the previous step
+        # Or 'soft_fail: true' to checkov.
+        if: success() || failure()
         with:
-          sarif_file: ${{ steps.zscaler-iac-scan.sarif_file_path }}
+          sarif_file: results.sarif
+        
